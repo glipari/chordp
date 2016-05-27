@@ -4,11 +4,10 @@ import sys, getopt
 import codecs
 
 
-
-
 class ChordProcessor :
     def __init__(self, type = 'en') :
         self.output_format = None
+        self.type = type
         if type == 'en' :
             self.chord_list = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
         else:
@@ -20,14 +19,14 @@ class ChordProcessor :
             if not flag :
                 chlist = chlist + '|'
             flag = False
-            chlist = chlist+'('+c+')'        
+            chlist = chlist+c        
         chlist = chlist + ')'
 
         cdies = '(#|b)?'
         cmode = '(m(aj7)?)?'
         cadd = '(4|5|6|7|9|11|13)'
         caddf = cadd + '?'
-        clast = '(/('+chlist+'|'+cadd+'))?' 
+        clast = '(/('+chlist+'|'+cadd+'))?'
 
         self.regex_chord_en = chlist + cdies + cmode + caddf + clast
         #print self.regex_chord_en
@@ -41,6 +40,68 @@ class ChordProcessor :
             return m.group() == str 
         else :
             return False
+
+    def get_chord_number(self, str) :
+        """ 
+        returns the pair (chord number, the rest of the chord)
+        it may be useful for transposing chords
+        """
+        if self.is_a_chord(str) :
+            m = self.pattern_en.match(str)
+            gr = m.groups()
+            # print gr
+            ch_index = self.chord_list.index(gr[0])
+            if ch_index < 3 : ch_index = ch_index * 2
+            else : ch_index = 5 + (ch_index - 3) * 2
+            # print ch_index
+            if gr[1] != None :
+                if gr[1] == '#' :
+                    ch_index = ch_index + 1
+                elif gr[1] == 'b' :
+                    ch_index = ch_index - 1
+                else :
+                    print 'Error!!' 
+                    sys.exit (-2)
+
+            while ch_index < 0 : ch_index += 12
+            while ch_index > 11 : ch_index -= 12
+            rest = ''
+            for x in gr[2:] :
+                if x != None :
+                    rest = rest + x # rest = ''.join(list(gr)[1:])
+            # print rest        
+            return ch_index, rest
+        else :
+            return None
+
+            
+    def transpose(self, chord, delta, dies = True) :
+        if self.is_a_chord(chord) :
+            n, r = self.get_chord_number(chord)
+            n = (n + delta) % 12
+            i = 0 
+            d = 0
+
+            if n < 5 : 
+                i = n / 2
+                d = n % 2
+            else: 
+                i = (n-5)/2+3
+                d = (n-5) % 2
+
+            if d == 0 :
+                final = self.chord_list[i]
+            else :
+                if dies :
+                    final = self.chord_list[i]
+                    final = final + '#'
+                else :
+                    final = self.chord_list[(i+1)%7]
+                    final = final + 'b'
+
+            return final + r
+        else :
+            return None
 
 
     def chord_line(self, str) :
