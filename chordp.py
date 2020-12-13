@@ -2,31 +2,31 @@
 import re
 import sys, getopt
 import codecs
-
+import subprocess
 
 class ChordProcessor :
     def __init__(self, type = 'en') :
         self.output_format = None
-        self.type = type
         if type == 'en' :
             self.chord_list = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
         else:
             self.chord_list = ['DO', 'RE', 'MI', 'FA', 'SOL', 'LA', 'SI']
 
+        # Builds the regular expression for detecting chords
         chlist = '('
         flag = True
         for c in self.chord_list :
             if not flag :
                 chlist = chlist + '|'
             flag = False
-            chlist = chlist+c        
+            chlist = chlist+'('+c+')'        
         chlist = chlist + ')'
 
         cdies = '(#|b)?'
         cmode = '(m(aj7)?)?'
-        cadd = '(4|5|6|7|9|11|13)'
+        cadd = '(sus4|sus2|4|5|6|7|9|11|13)'
         caddf = cadd + '?'
-        clast = '(/('+chlist+'|'+cadd+'))?'
+        clast = '(/('+chlist+cdies+'|'+cadd+'))?' 
 
         self.regex_chord_en = chlist + cdies + cmode + caddf + clast
         #print self.regex_chord_en
@@ -34,6 +34,7 @@ class ChordProcessor :
         return 
 
 
+    # If the patterns matches 
     def is_a_chord(self, str) :
         m = self.pattern_en.match(str)
         if m :
@@ -41,69 +42,10 @@ class ChordProcessor :
         else :
             return False
 
-    def get_chord_number(self, str) :
-        """ 
-        returns the pair (chord number, the rest of the chord)
-        it may be useful for transposing chords
-        """
-        if self.is_a_chord(str) :
-            m = self.pattern_en.match(str)
-            gr = m.groups()
-            # print gr
-            ch_index = self.chord_list.index(gr[0])
-            if ch_index < 3 : ch_index = ch_index * 2
-            else : ch_index = 5 + (ch_index - 3) * 2
-            # print ch_index
-            if gr[1] != None :
-                if gr[1] == '#' :
-                    ch_index = ch_index + 1
-                elif gr[1] == 'b' :
-                    ch_index = ch_index - 1
-                else :
-                    print 'Error!!' 
-                    sys.exit (-2)
 
-            while ch_index < 0 : ch_index += 12
-            while ch_index > 11 : ch_index -= 12
-            rest = ''
-            for x in gr[2:] :
-                if x != None :
-                    rest = rest + x # rest = ''.join(list(gr)[1:])
-            # print rest        
-            return ch_index, rest
-        else :
-            return None
-
-            
-    def transpose(self, chord, delta, dies = True) :
-        if self.is_a_chord(chord) :
-            n, r = self.get_chord_number(chord)
-            n = (n + delta) % 12
-            i = 0 
-            d = 0
-
-            if n < 5 : 
-                i = n / 2
-                d = n % 2
-            else: 
-                i = (n-5)/2+3
-                d = (n-5) % 2
-
-            if d == 0 :
-                final = self.chord_list[i]
-            else :
-                if dies :
-                    final = self.chord_list[i]
-                    final = final + '#'
-                else :
-                    final = self.chord_list[(i+1)%7]
-                    final = final + 'b'
-
-            return final + r
-        else :
-            return None
-
-
+    # If the line "str" is composed entirely of chords, then it
+    # returns a list of pairs (chord, position), otherwise it returns None
+    # @todo add the possibility to add more symbols, like repetitions, etc.
     def chord_line(self, str) :
         words = str.split()
         last_pos = 0
@@ -138,32 +80,32 @@ class ChordProcessor :
 
         for l in lines[x:] :
             l = l[:-1]  # remove \n
-            if l.strip() == '' :
+            if l.strip() == '' :    # an empty line ends the verse 
                 if in_verse > 0:
                     self.output_format.end_verse()
                     in_verse = 0
                     chord_sequence = None
                 else :
                     continue
-            elif chord_sequence != None :
-                # print 'Mixing chords ', chord_sequence, ' with line ', l
+            elif chord_sequence != None :   # a verse with a chord sequence on top
                 # mix chords with words
                 final = u''
                 q = 0
-                for c, p in chord_sequence :
-                    #print '%%% DEBUG %%% q =', q, ' p =', p, ' c =', c
-                    if p >= len(l) :
-                        if q < len(l) :
-                            final = final + l[q:] + '  ' + self.output_format.get_formatted_chord(c)
+                for c, p in chord_sequence :  #c: chord, p:position 
+                    if p >= len(l) :                        # the position is beyond the lenght of the verse
+                        if q < len(l) :                     # and the previos position was within the verse
+                            # put the chord at the end
+                            final = final + l[q:] + ' ' + self.output_format.get_formatted_chord(c)  
                         else :
-                            final = final + ' ' + self.output_format.get_formatted_chord(c)
+                            # put some extra space in it
+                            final = final + ' ' + self.output_format.get_space(4) + self.output_format.get_formatted_chord(c)  
                         q = p
                     else :
                         final = final + l[q:p] + self.output_format.get_formatted_chord(c)
                         q = p
-                    #print '%%% DEBUG %%% final =', final
+
                 if q < len(l) : final = final + l[q:]
-                print final
+                self.output_format.print_verse(final)
                 in_verse = in_verse + 1
                 chord_sequence = None
             else :
@@ -173,10 +115,7 @@ class ChordProcessor :
                     self.output_format.start_verse()
                 chord_sequence = self.chord_line(l)
                 if chord_sequence == None :
-                    #print '%%% DEBUG %%% : chords not found'
-                    print l
-                #else :
-                    #print '%%% DEBUG %%% : chords found!'
+                    self.output_format.print_verse(l)
 
         if in_verse > 0 :
             self.output_format.end_verse()
@@ -184,91 +123,153 @@ class ChordProcessor :
 
 
 class LaTexOutputFormat :
-    def __init__(self, inter, columns) :
+    def __init__(self, inter, columns, fname) :
+        self.filename = fname
         self.interline = inter
         self.columns = columns
+        self.of = open(fname, "w")
 
     def print_header(self) :
-        print '\\documentclass{article}'
-        print '\\usepackage[chorded]{songs}'
-        print '\\usepackage[textwidth=17cm,textheight=20cm]{geometry}'
-        print '\\usepackage{tikz}'
-        print '\\usepackage[utf8]{inputenc}'
-        print '\\renewcommand{\\printchord}[1]{\\rmfamily\\bf#1}'
-        print '\\noversenumbers'
-        print '\\begin{document}'
-
+        self.of.write('\\documentclass{article}\n')
+        self.of.write('\\usepackage[chorded]{songs}\n')
+        self.of.write('\\usepackage[textwidth=17cm,textheight=20cm]{geometry}\n')
+        self.of.write('\\usepackage{tikz}\n')
+        self.of.write('\\usepackage[utf8]{inputenc}\n')
+        self.of.write('\\renewcommand{\\printchord}[1]{\\rmfamily\\bf#1}\n')
+        self.of.write('\\noversenumbers\n')
+        self.of.write('\\songcolumns{'+str(self.columns)+'}\n')
+        self.of.write('\\begin{document}\n')
 
     def start_song(self,t) :
-        print '\\begin{song}{' + t[0:-1] +'}'
+        self.of.write('\\begin{song}{' + t[0:-1] +'}\n')
         
     def start_verse(self) :
-        print '\\begin{verse}'
+        self.of.write('\\begin{verse}\n')
             
     def end_verse(self) :
-        print '\\end{verse}'
+        self.of.write('\\end{verse}\n')
         
     def end_song(self) :
-        print '\\end{song}'
+        self.of.write('\\end{song}\n')
 
     def end_file(self) :
-        print '\\end{document}'
+        self.of.write('\\end{document}\n')
+        self.of.close()
         
     def get_formatted_chord(self, c) :
         return '\\['+c+']'
 
     def print_textline(self,x) :
-        print x
+        self.of.write(x+'\n')
+
+    def print_verse(self, l) :
+        self.of.write(l+'\n')
 
 
-
-
-class OrgOutputFormat :
-    def __init__(self, inter, columns) :
-        self.interline = inter
+class LeadsheetOutputFormat :
+    def __init__(self, interline, columns, fname) :
+        self.filename = fname
+        self.interline = interline
         self.columns = columns
-
+        self.of = open(fname, "w")
+        
     def print_header(self) :
-        print '#+OPTIONS: toc:nil num:nil'
-        print '#+LaTeX_CLASS_OPTIONS: [11pt,a4paper]'
-        print "#+LATEX_HEADER: \\usepackage{setspace}"
-        print '#+LATEX_HEADER: \\usepackage{multicol}'
-        print '#+LATEX_HEADER: \\usepackage[textwidth=18cm,textheight=22cm]{geometry}'
-        print 
+        self.of.write('\\documentclass[11pt]{article}\n')
+        self.of.write('\\usepackage{setspace}\n')
+        self.of.write('\\usepackage{multicol}\n')
+        self.of.write('\\usepackage{color}\n')
+        self.of.write('\\usepackage[textwidth=18cm,textheight=22cm]{geometry}\n')
+        self.of.write('\\newcommand\\chord[2][l]{%\n')
+        self.of.write('\\makebox[0pt][#1]{\\begin{tabular}[b]{@{}l@{}}\\textbf{\color{blue}#2}\\\\\\mbox{}\\end{tabular}}}\n')
+        self.of.write('\\renewcommand{\\familydefault}{\\sfdefault}\n')
+        self.of.write('\\begin{document}\n')
 
-
-    def print_title(self,t) :
-        print '*', t
+    def print_title(self, t) :
+        self.of.write('\\section*{'+ t+ '}\n')
 
     def start_song(self,t) :
         self.print_title(t)
-        print '#+BEGIN_EXPORT latex'
-        if self.columns > 1 : print '\\begin{multicols}{'+str(self.columns)+'}'
-        print '\\sffamily'
-        print '\\begin{spacing}{'+str(self.interline)+'}'
-        print '#+END_EXPORT'
+        if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
+        self.of.write('\\begin{spacing}{'+str(self.interline)+'}\n')
+        
+
+    def start_verse(self) :
+        self.of.write('\\begin{verse}\n')
+
+    def end_verse(self) :
+        self.of.write('\\end{verse}\n')
+
+    def end_song(self) :
+        self.of.write('\\end{spacing}\n')
+        if self.columns > 1 : self.of.write('\\end{multicols}\n')
+        self.of.write('\\newpage\n\n')
+        
+    def end_file(self) :
+        self.of.write('\\end{document}\n')
+        self.of.close()
+        
+    def get_formatted_chord(self, c) :
+        return '\\chord{'+c.replace('#','\\#')+'}'
+
+    def get_space(self,x) :
+        return '\\hspace{'+str(12*x)+'pt}\n'
+
+    def print_textline(self,x) :
+        self.of.write(x)
+        
+    def print_verse(self, l) :
+        self.of.write(l + '\\\\\n')
+
+        
+class OrgOutputFormat :
+    def __init__(self, inter, columns, fname) :
+        self.filename = fname
+        self.interline = inter
+        self.columns = columns
+        self.of = open(fname, "w")
+
+    def print_header(self) :
+        self.of.write('#+OPTIONS: toc:nil num:nil\n')
+        self.of.write('#+LaTeX_CLASS_OPTIONS: [11pt,a4paper]\n')
+        self.of.write("#+LATEX_HEADER: \\usepackage{setspace}\n")
+        self.of.write('#+LATEX_HEADER: \\usepackage{multicol}\n')
+        self.of.write('#+LATEX_HEADER: \\usepackage[textwidth=18cm,textheight=22cm]{geometry}\n')
+        self.of.write('\n')
+
+
+    def print_title(self,t) :
+        self.of.write('* ' + t)
+
+    def start_song(self,t) :
+        self.print_title(t)
+        self.of.write('#+BEGIN_EXPORT latex\n')
+        if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
+        self.of.write('\\sffamily\n')
+        self.of.write('\\begin{spacing}{'+str(self.interline)+'}\n')
+        self.of.write('#+END_EXPORT\n')
 
 
     def end_song(self) :
-        print '#+BEGIN_EXPORT latex'
-        print '\\end{spacing}'
-        if self.columns > 1 : print '\\end{multicols}'
-        print '\\newpage'
-        print '#+END_EXPORT'
+        self.of.write('#+BEGIN_EXPORT latex\n')
+        self.of.write('\\end{spacing}\n')
+        if self.columns > 1 : self.of.write('\\end{multicols}\n')
+        self.of.write('\\newpage\n')
+        self.of.write('#+END_EXPORT\n')
                 
 
     def start_verse(self) :
-        # print '#+LaTeX: \\begin{spacing}{1.5}'
-        print '#+BEGIN_VERSE'
+        # self.of.write('#+LaTeX: \\begin{spacing}{1.5}'
+        self.of.write('#+BEGIN_VERSE\n')
         return 
 
 
     def end_verse(self) :
-        print '#+END_VERSE'
+        self.of.write('#+END_VERSE\n')
         # print '#+LaTeX: \\end{spacing}'
 
 
     def end_file(self) :
+        self.of.close()
         return 
 
 
@@ -276,66 +277,78 @@ class OrgOutputFormat :
         return '\\textbf{[' + c.replace('#','\\#') + ']}'
 
     def print_textline(self,x) :
-        print x
-        
+        self.of.write(x+'\n')
+
+    def print_verse(self,x) :
+        self.of.write(x+'\n')
+
 
 
 def main(argv) :
     try :
-        ops, args = getopt.getopt(argv,"ht:i:l:c:")
+        ops, args = getopt.getopt(argv,"ht:i:l:c:o:")
     except getopt.GetoptError:
-        print 'chordp.py [-ht:i:l:c:] inputfile'
+        print ('chordp.py [-ht:i:l:c:o:] inputfile')
         sys.exit(2)
         
-    otype = 'org'
+    otype = 'lead'
     lang = 'en'
     interline = 1.0
     columns = 2
+    outfile = "out"
+    outfilename = "out.tex"
 
     for o, a in ops:
         if o == '-t' :
-            if a != 'org' and a != 'song':
-                print 'type can only be "org" or "song"'
+            if a != 'org' and a != 'song' and a != 'lead' :
+                print ('type can be "org" or "song" or "lead"')
                 exit(2)
             else :
                 otype = a
         elif o == '-h' :
-            print 'Usage : chord.py [-h,-t type,-l lang, -c cols] files'
-            print ' -h     : help'
-            print ' -t type: type of output (org or song)'
-            print ' -i n   : lineskip (default = 1)'
-            print ' -l lang: language (en or it, default = en)'
-            print ' -c cols: number of columns (default = 2)'
+            print ('Usage : chord.py [-h,-t type,-l lang, -c cols] files')
+            print (' -h     : help')
+            print (' -t type: type of output (org, song, lead)')
+            print (' -i n   : lineskip (default = 1)')
+            print (' -l lang: language (en or it, default = en)')
+            print (' -c cols: number of columns (default = 2)')
             exit(2)
         elif o == '-i' :
             interline = float(a)
         elif o == '-l' :
             if a != 'en' and a != 'it' : 
-                print 'Unsupported language: chose between en or it' 
+                print ('Unsupported language: chose between en or it')
                 exit(2)
             else :
                 lang = a
         elif o == '-c' :
             columns = int(a)
+        elif o == '-o' :
+            outfile = a
         
-    
+            
     cp = ChordProcessor(lang)
     if otype == 'org' :
-        cp.output_format = OrgOutputFormat(interline, columns)
+        outfilename = outfile + ".org"
+        cp.output_format = OrgOutputFormat(interline, columns, outfilename)
+    elif otype == 'song' :
+        outfilename = outfile + ".tex"
+        cp.output_format = LaTexOutputFormat(interline, columns, outfilename)
     else :
-        cp.output_format = LaTexOutputFormat(interline, columns)
+        outfilename = outfile + ".tex"
+        cp.output_format = LeadsheetOutputFormat(interline, columns, outfilename)
 
     cp.output_format.print_header()
 
     for fname in args :
-
         with codecs.open(fname, encoding='utf-8') as f:
             lines = f.readlines()
             cp.process_song(lines)
 
     cp.output_format.end_file()
 
-
+    if otype == 'song' or otype == 'lead' :
+        subprocess.call(["pdflatex", "-jobname="+outfile, outfilename])
 
 if __name__ == '__main__' :
     main(sys.argv[1:])
