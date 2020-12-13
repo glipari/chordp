@@ -73,6 +73,7 @@ class ChordProcessor :
 		self.output_format.start_song(lines[0])
 
 		in_verse = 0;
+		in_tab = 0;
 		x = 1  # index of first line
 
 		while not lines[x].startswith('---') :
@@ -84,7 +85,16 @@ class ChordProcessor :
 
 		for l in lines[x:] :
 			l = l[:-1]  # remove \n
-			if l.strip() == '' :    # an empty line ends the verse
+
+			if l.strip() == '[tab]' :
+				in_tab = 1
+				self.output_format.start_verbatim()
+			elif l.strip() == '[/]' :
+				in_tab = 0
+				self.output_format.end_verbatim()
+			elif in_tab > 0 :
+				self.output_format.print_textline(l)
+			elif l.strip() == '' :    # an empty line ends the verse
 				if in_verse > 0:
 					self.output_format.end_verse()
 					in_verse = 0
@@ -163,7 +173,7 @@ class LaTexOutputFormat :
 	def get_formatted_chord(self, c) :
 		return '\\['+c+']'
 
-	def print_textline(self,x) :
+	def print_textline(self, x) :
 		self.of.write(x+'\n')
 
 	def print_verse(self, l) :
@@ -196,7 +206,15 @@ class LeadsheetOutputFormat :
 		if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
 		self.of.write('\\begin{spacing}{'+str(self.interline)+'}\n')
 
+		
+	def start_verbatim(self) :
+		self.of.write('\\begin{verbatim}\n')
 
+		
+	def end_verbatim(self) :
+		self.of.write('\\end{verbatim}\n')
+		
+		
 	def start_verse(self) :
 		self.of.write('\\begin{verse}\n')
 
@@ -218,8 +236,8 @@ class LeadsheetOutputFormat :
 	def get_space(self,x) :
 		return '\\hspace{'+str(12*x)+'pt}\n'
 
-	def print_textline(self,x) :
-		self.of.write(x)
+	def print_textline(self, x) :
+		self.of.write(x+'\n')
 
 	def print_verse(self, l) :
 		self.of.write(l + '\\\\\n')
