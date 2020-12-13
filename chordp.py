@@ -173,6 +173,12 @@ class LaTexOutputFormat :
 	def get_formatted_chord(self, c) :
 		return '\\['+c+']'
 
+	def start_verbatim(self) :
+		self.of.write('\\begin{verbatim}\n')
+		
+	def end_verbatim(self) :
+		self.of.write('\\end{verbatim}\n')
+		
 	def print_textline(self, x) :
 		self.of.write(x+'\n')
 
@@ -298,6 +304,13 @@ class OrgOutputFormat :
 	def get_formatted_chord(self, c) :
 		return '\\textbf{[' + c.replace('#','\\#') + ']}'
 
+	def start_verbatim(self) :
+		self.of.write('#+BEGIN_VERBATIM\n')
+		
+	def end_verbatim(self) :
+		self.of.write('#+END_VERBATIM\n')
+
+		
 	def print_textline(self,x) :
 		self.of.write(x+'\n')
 
