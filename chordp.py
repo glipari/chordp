@@ -75,12 +75,19 @@ class ChordProcessor :
 		# search title
 		self.output_format.start_song(lines[0])
 
+		local_transpose = GlobalParameters.transpose
+		
 		in_verse = 0;
 		in_tab = 0;
 		x = 1  # index of first line
 
 		while not lines[x].startswith('---') :
-			self.output_format.print_textline(lines[x])
+			l = lines[x].strip()
+			if re.match('transpose', l) :
+				i = l.find(':')
+				local_transpose = int(l[i+1:])
+			else : 
+				self.output_format.print_textline(lines[x])
 			x = x + 1
 
 		x = x + 1
@@ -109,8 +116,8 @@ class ChordProcessor :
 				final = u''
 				q = 0
 				for c, p in chord_sequence :  #c: chord, p:position
-					if (GlobalParameters.transpose != 0) :
-						c = self.transpose(c, GlobalParameters.transpose)
+					if (local_transpose != 0) :
+						c = self.transpose(c, local_transpose)
 					if p >= len(l) :                        # the position is beyond the length of the verse
 						if q < len(l) :                     # and the previous position was within the verse
 							# put the chord at the end
