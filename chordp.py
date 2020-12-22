@@ -11,6 +11,8 @@ class GlobalParameters :
 class ChordProcessor :
 	def __init__(self, type = 'en') :
 		self.output_format = None
+		# semitones
+		self.distance = [2, 2, 1, 2, 2, 2, 1] 
 		if type == 'en' :
 			self.chord_list = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
 		else:
@@ -106,8 +108,8 @@ class ChordProcessor :
 				final = u''
 				q = 0
 				for c, p in chord_sequence :  #c: chord, p:position
-					if p >= len(l) :                        # the position is beyond the lenght of the verse
-						if q < len(l) :                     # and the previos position was within the verse
+					if p >= len(l) :                        # the position is beyond the length of the verse
+						if q < len(l) :                     # and the previous position was within the verse
 							# put the chord at the end
 							final = final + l[q:] + ' ' + self.output_format.get_formatted_chord(c)
 						else :
@@ -136,6 +138,48 @@ class ChordProcessor :
 		self.output_format.end_song()
 
 
+	def transpose(self, chord, position) :
+		#first, find the chord, I consider English for the moment
+		for i in range(len(self.chord_list)) :
+			if re.match(self.chord_list[i], chord, re.I) :
+				break
+		# print('Found : ' + self.chord_list[i])
+		# print('i : ', i)
+		
+		modif = chord[len(self.chord_list[i]):]
+		#print("Modif : ", modif)
+		
+		if re.match(self.chord_list[i] + '#', chord, re.I) : 
+			position = position + 1
+			modif = chord[len(self.chord_list[i]) + 1:]
+		if re.match(self.chord_list[i] + 'b', chord, re.I) : 
+			position = position - 1
+			modif = chord[len(self.chord_list[i]) + 1:]
+		
+		#print("Position : ", position)
+		
+		if position > 0 :		
+			while position >= self.distance[i] :
+				position = position - self.distance[i]
+				i += 1
+				if i >= len(self.chord_list) : i = 0
+		else :
+			while position <= -self.distance[i-1] :
+				position = position + self.distance[i-1]
+				i -= 1
+				if i <= 0 : i = len(self.chord_list)-1 
+		#print("New chord i : ", i)
+		
+		newchord = self.chord_list[i]
+		if position == 1 :
+			newchord = newchord + '#' + modif
+		elif position == -1 :
+			newchord = newchord + 'b' + modif
+		else :
+			newchord = newchord + modif
+		
+		return newchord	
+		
 class LaTexOutputFormat :
 	def __init__(self, inter, columns, fname) :
 		self.filename = fname
