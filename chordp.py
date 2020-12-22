@@ -6,6 +6,7 @@ import subprocess
 
 class GlobalParameters :
 	fontsize = "11"
+	transpose = 0
 
 
 class ChordProcessor :
@@ -108,6 +109,8 @@ class ChordProcessor :
 				final = u''
 				q = 0
 				for c, p in chord_sequence :  #c: chord, p:position
+					if (GlobalParameters.transpose != 0) :
+						c = self.transpose(c, GlobalParameters.transpose)
 					if p >= len(l) :                        # the position is beyond the length of the verse
 						if q < len(l) :                     # and the previous position was within the verse
 							# put the chord at the end
@@ -238,7 +241,7 @@ class LeadsheetOutputFormat :
 		self.of = open(fname, "w")
 
 	def print_header(self) :
-		self.of.write('\\documentclass[' + GlobalParameters.fontsize + ']{article}\n')
+		self.of.write('\\documentclass[' + GlobalParameters.fontsize + 'pt]{extarticle}\n')
 		self.of.write('\\usepackage{setspace}\n')
 		self.of.write('\\usepackage{multicol}\n')
 		self.of.write('\\usepackage{color}\n')
@@ -365,7 +368,7 @@ class OrgOutputFormat :
 
 def main(argv) :
 	try :
-		ops, args = getopt.getopt(argv,"ht:i:l:c:o:f:")
+		ops, args = getopt.getopt(argv,"ht:i:l:c:o:f:r:")
 	except getopt.GetoptError:
 		print ('chordp.py [-ht:i:l:c:o:f:] inputfile')
 		sys.exit(2)
@@ -392,6 +395,7 @@ def main(argv) :
 			print (' -l lang: language (en or it, default = en)')
 			print (' -c cols: number of columns (default = 2)')
 			print (' -f size: font size (default = 11)')
+			print (' -r rel : transpose by rel semitones (pos. or neg.)')
 			exit(2)
 		elif o == '-i' :
 			interline = float(a)
@@ -406,11 +410,13 @@ def main(argv) :
 		elif o == '-o' :
 			outfile = a
 		elif o == '-f' :
-			if (int(a) < 10 or int(a) > 14) :
+			if (int(a) < 8 or int(a) > 14) :
 				print('Unsupported font size')
 				exit(-3)
 			else :
 				GlobalParameters.fontsize = a
+		elif o == '-r' :
+			GlobalParameters.transpose = int(a)
 
 
 	cp = ChordProcessor(lang)
