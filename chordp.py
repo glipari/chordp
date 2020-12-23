@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import re
+import os
 import sys, getopt
 import codecs
 import subprocess
@@ -28,14 +29,15 @@ class ChordProcessor :
 			flag = False
 			chlist = chlist+'('+c+')'
 		chlist = chlist + ')'
-
+		
 		cdies = '(#|b)?'
 		cmode = '(m(aj7)?)?'
-		cadd = '(sus4|sus2|4|5|6|7|9|11|13)'
+		cadd = '(sus4|sus2|4|5|6|7(\\+)?|9|11|13)'
 		caddf = cadd + '?'
 		clast = '(/('+chlist+cdies+'|'+cadd+'))?'
+		csep = '\\|'
 
-		self.regex_chord_en = chlist + cdies + cmode + caddf + clast
+		self.regex_chord_en = csep + '|' + '(' + chlist + cdies + cmode + caddf + clast + ')'
 		#print self.regex_chord_en
 		self.pattern_en = re.compile(self.regex_chord_en)
 		return
@@ -124,7 +126,7 @@ class ChordProcessor :
 							final = final + l[q:] + ' ' + self.output_format.get_formatted_chord(c)
 						else :
 							# put some extra space in it
-							final = final + ' ' + self.output_format.get_space(4) + self.output_format.get_formatted_chord(c)
+							final = final + ' ' + self.output_format.get_space(2) + self.output_format.get_formatted_chord(c)
 						q = p
 					else :
 						final = final + l[q:p] + self.output_format.get_formatted_chord(c)
@@ -252,7 +254,7 @@ class LeadsheetOutputFormat :
 		self.of.write('\\usepackage{setspace}\n')
 		self.of.write('\\usepackage{multicol}\n')
 		self.of.write('\\usepackage{color}\n')
-		self.of.write('\\usepackage[textwidth=18cm,textheight=22cm]{geometry}\n')
+		self.of.write('\\usepackage[textwidth=19cm,textheight=22cm]{geometry}\n')
 		self.of.write('\\newcommand\\chord[2][l]{%\n')
 		self.of.write('\\makebox[0pt][#1]{\\begin{tabular}[b]{@{}l@{}}\\textbf{\color{blue}#2}\\\\\\mbox{}\\end{tabular}}}\n')
 		self.of.write('\\renewcommand{\\familydefault}{\\sfdefault}\n')
@@ -291,10 +293,14 @@ class LeadsheetOutputFormat :
 		self.of.close()
 
 	def get_formatted_chord(self, c) :
-		return '\\chord{'+c.replace('#','\\#')+'}'
+		if c == '|' : return '\\chord{$\\vert$}' 
+		else : return '\\chord{'+c.replace('#','\\#')+'}'
 
 	def get_space(self,x) :
-		return '\\hspace{'+str(12*x)+'pt}\n'
+		#points = GlobalParameters.fontsize * x
+		#return '\\hspace{'+str(points)+'pt}\n'
+		spaces = '~' * 5 * x 
+		return spaces; 
 
 	def print_textline(self, x) :
 		self.of.write(x+'\n')
@@ -447,7 +453,11 @@ def main(argv) :
 	cp.output_format.end_file()
 
 	if otype == 'song' or otype == 'lead' :
-		subprocess.call(["pdflatex", "-jobname="+outfile, outfilename])
+		subprocess.run(["pdflatex", "-jobname="+outfile, outfilename], shell=True, check=True)
+		
+		os.remove(outfilename)
+		os.remove(outfile + ".aux")
+		os.remove(outfile + ".log")
 
 if __name__ == '__main__' :
 	main(sys.argv[1:])

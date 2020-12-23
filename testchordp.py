@@ -14,6 +14,9 @@ class TestChordProcessor(unittest.TestCase) :
 		self.assertTrue(ch.is_a_chord('A7/4'))
 		self.assertTrue(ch.is_a_chord('F/A'))
 		self.assertTrue(ch.is_a_chord('A7/4'))
+		self.assertTrue(ch.is_a_chord('Am7'))
+		self.assertTrue(ch.is_a_chord('A7+'))
+		self.assertTrue(ch.is_a_chord('Am7+'))
 
 	# def test_ch_index_en(self) :
 		# ch = chordp.ChordProcessor('en')
