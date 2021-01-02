@@ -236,56 +236,6 @@ class ChordProcessor :
         return newchord
 
 class LaTexOutputFormat :
-    def __init__(self, inter, columns, fname) :
-        self.filename = fname
-        self.interline = inter
-        self.columns = columns
-        self.of = open(fname, "w")
-
-    def print_header(self) :
-        self.of.write('\\documentclass{article}\n')
-        self.of.write('\\usepackage[chorded]{songs}\n')
-        self.of.write('\\usepackage[textwidth=17cm,textheight=20cm]{geometry}\n')
-        self.of.write('\\usepackage{tikz}\n')
-        self.of.write('\\usepackage[utf8]{inputenc}\n')
-        self.of.write('\\renewcommand{\\printchord}[1]{\\rmfamily\\bf#1}\n')
-        self.of.write('\\noversenumbers\n')
-        self.of.write('\\songcolumns{'+str(self.columns)+'}\n')
-        self.of.write('\\begin{document}\n')
-
-    def start_song(self,t) :
-        self.of.write('\\begin{song}{' + t[0:-1] +'}\n')
-
-    def start_verse(self) :
-        self.of.write('\\begin{verse}\n')
-
-    def end_verse(self) :
-        self.of.write('\\end{verse}\n')
-
-    def end_song(self) :
-        self.of.write('\\end{song}\n')
-
-    def end_file(self) :
-        self.of.write('\\end{document}\n')
-        self.of.close()
-
-    def get_formatted_chord(self, c) :
-        return '\\['+c+']'
-
-    def start_verbatim(self) :
-        self.of.write('\\begin{verbatim}\n')
-
-    def end_verbatim(self) :
-        self.of.write('\\end{verbatim}\n')
-
-    def print_textline(self, x) :
-        self.of.write(x+'\n')
-
-    def print_verse(self, l) :
-        self.of.write(l+'\n')
-
-
-class LeadsheetOutputFormat :
     def __init__(self, interline, columns, fname) :
         self.filename = fname
         self.interline = interline
@@ -313,14 +263,11 @@ class LeadsheetOutputFormat :
         if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
         self.of.write('\\begin{spacing}{'+str(self.interline)+'}\n')
 
-
     def start_verbatim(self) :
         self.of.write('\\begin{verbatim}\n')
 
-
     def end_verbatim(self) :
         self.of.write('\\end{verbatim}\n')
-
 
     def start_verse(self) :
         self.of.write('\\begin{verse}\n')
@@ -337,19 +284,19 @@ class LeadsheetOutputFormat :
         self.of.write('\\end{document}\n')
         self.of.close()
 
-    def get_formatted_chord(self, c) :
-        if c == '|' : return '\\chord{$\\vert$}'
-        else : return '\\chord{'+c.replace('#','\\#')+'}'
+#    def get_formatted_chord(self, c) :
+#        if c == '|' : return '\\chord{$\\vert$}'
+#        else : return '\\chord{'+c.replace('#','\\#')+'}'
 
     def print_chord(self, c, t) :
         if c == '|' : return '\\textchord{$\\vert$}{'+t+'}'
         else : return '\\textchord{'+c.replace('#', '\\#')+'}{'+t+'}'
         
-    def get_space(self,x) :
-        #points = GlobalParameters.fontsize * x
-        #return '\\hspace{'+str(points)+'pt}\n'
-        spaces = '~' * 5 * x
-        return spaces;
+#    def get_space(self,x) :
+#        #points = GlobalParameters.fontsize * x
+#        #return '\\hspace{'+str(points)+'pt}\n'
+#        spaces = '~' * 5 * x
+#        return spaces;
 
     def print_textline(self, x) :
         self.of.write(x+'\n')
@@ -358,79 +305,79 @@ class LeadsheetOutputFormat :
         self.of.write(l + '\\\\\n')
 
 
-class OrgOutputFormat :
-    def __init__(self, inter, columns, fname) :
-        self.filename = fname
-        self.interline = inter
-        self.columns = columns
-        self.of = open(fname, "w")
+# class OrgOutputFormat :
+    # def __init__(self, inter, columns, fname) :
+        # self.filename = fname
+        # self.interline = inter
+        # self.columns = columns
+        # self.of = open(fname, "w")
 
-    def print_header(self) :
-        self.of.write('#+OPTIONS: toc:nil num:nil\n')
-        self.of.write('#+LaTeX_CLASS_OPTIONS: [11pt,a4paper]\n')
-        self.of.write("#+LATEX_HEADER: \\usepackage{setspace}\n")
-        self.of.write('#+LATEX_HEADER: \\usepackage{multicol}\n')
-        self.of.write('#+LATEX_HEADER: \\usepackage[textwidth=18cm,textheight=22cm]{geometry}\n')
-        self.of.write('\n')
-
-
-    def print_title(self,t) :
-        self.of.write('* ' + t)
-
-    def start_song(self,t) :
-        self.print_title(t)
-        self.of.write('#+BEGIN_EXPORT latex\n')
-        if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
-        self.of.write('\\sffamily\n')
-        self.of.write('\\begin{spacing}{'+str(self.interline)+'}\n')
-        self.of.write('#+END_EXPORT\n')
+    # def print_header(self) :
+        # self.of.write('#+OPTIONS: toc:nil num:nil\n')
+        # self.of.write('#+LaTeX_CLASS_OPTIONS: [11pt,a4paper]\n')
+        # self.of.write("#+LATEX_HEADER: \\usepackage{setspace}\n")
+        # self.of.write('#+LATEX_HEADER: \\usepackage{multicol}\n')
+        # self.of.write('#+LATEX_HEADER: \\usepackage[textwidth=18cm,textheight=22cm]{geometry}\n')
+        # self.of.write('\n')
 
 
-    def end_song(self) :
-        self.of.write('#+BEGIN_EXPORT latex\n')
-        self.of.write('\\end{spacing}\n')
-        if self.columns > 1 : self.of.write('\\end{multicols}\n')
-        self.of.write('\\newpage\n')
-        self.of.write('#+END_EXPORT\n')
+    # def print_title(self,t) :
+        # self.of.write('* ' + t)
+
+    # def start_song(self,t) :
+        # self.print_title(t)
+        # self.of.write('#+BEGIN_EXPORT latex\n')
+        # if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
+        # self.of.write('\\sffamily\n')
+        # self.of.write('\\begin{spacing}{'+str(self.interline)+'}\n')
+        # self.of.write('#+END_EXPORT\n')
 
 
-    def start_verse(self) :
-        # self.of.write('#+LaTeX: \\begin{spacing}{1.5}'
-        self.of.write('#+BEGIN_VERSE\n')
-        return
+    # def end_song(self) :
+        # self.of.write('#+BEGIN_EXPORT latex\n')
+        # self.of.write('\\end{spacing}\n')
+        # if self.columns > 1 : self.of.write('\\end{multicols}\n')
+        # self.of.write('\\newpage\n')
+        # self.of.write('#+END_EXPORT\n')
 
 
-    def end_verse(self) :
-        self.of.write('#+END_VERSE\n')
-        # print '#+LaTeX: \\end{spacing}'
+    # def start_verse(self) :
+        # # self.of.write('#+LaTeX: \\begin{spacing}{1.5}'
+        # self.of.write('#+BEGIN_VERSE\n')
+        # return
 
 
-    def end_file(self) :
-        self.of.close()
-        return
+    # def end_verse(self) :
+        # self.of.write('#+END_VERSE\n')
+        # # print '#+LaTeX: \\end{spacing}'
 
 
-    def get_formatted_chord(self, c) :
-        return '\\textbf{[' + c.replace('#','\\#') + ']}'
-
-    def start_verbatim(self) :
-        self.of.write('#+BEGIN_VERBATIM\n')
-
-    def end_verbatim(self) :
-        self.of.write('#+END_VERBATIM\n')
+    # def end_file(self) :
+        # self.of.close()
+        # return
 
 
-    def print_textline(self,x) :
-        self.of.write(x+'\n')
+    # def get_formatted_chord(self, c) :
+        # return '\\textbf{[' + c.replace('#','\\#') + ']}'
 
-    def print_verse(self,x) :
-        self.of.write(x+'\n')
+    # def start_verbatim(self) :
+        # self.of.write('#+BEGIN_VERBATIM\n')
+
+    # def end_verbatim(self) :
+        # self.of.write('#+END_VERBATIM\n')
+
+
+    # def print_textline(self,x) :
+        # self.of.write(x+'\n')
+
+    # def print_verse(self,x) :
+        # self.of.write(x+'\n')
 
 
 
 def main(argv) :
     try :
-        ops, args = getopt.getopt(argv,"ht:i:l:c:o:f:r:")
+        ops, args = getopt.getopt(argv,"hi:l:c:o:f:r:")
     except getopt.GetoptError:
         print ('chordp.py [-ht:i:l:c:o:f:] inputfile')
         sys.exit(2)
@@ -443,16 +390,9 @@ def main(argv) :
     outfilename = "out.tex"
 
     for o, a in ops:
-        if o == '-t' :
-            if a != 'org' and a != 'song' and a != 'lead' :
-                print ('type can be "org" or "song" or "lead"')
-                exit(2)
-            else :
-                otype = a
-        elif o == '-h' :
+        if o == '-h' :
             print ('Usage : chord.py [-h,-t type,-l lang, -c cols] files')
             print (' -h     : help')
-            print (' -t type: type of output (org, song, lead)')
             print (' -i n   : lineskip (default = 1)')
             print (' -l lang: language (en or it, default = en)')
             print (' -c cols: number of columns (default = 2)')
@@ -482,15 +422,8 @@ def main(argv) :
 
 
     cp = ChordProcessor(lang)
-    if otype == 'org' :
-        outfilename = outfile + ".org"
-        cp.output_format = OrgOutputFormat(interline, GlobalParameters.columns, outfilename)
-    elif otype == 'song' :
-        outfilename = outfile + ".tex"
-        cp.output_format = LaTexOutputFormat(interline, GlobalParameters.columns, outfilename)
-    else :
-        outfilename = outfile + ".tex"
-        cp.output_format = LeadsheetOutputFormat(interline, GlobalParameters.columns, outfilename)
+    outfilename = outfile + ".tex"
+    cp.output_format = LaTexOutputFormat(interline, GlobalParameters.columns, outfilename)
 
     cp.output_format.print_header()
 
@@ -501,12 +434,11 @@ def main(argv) :
 
     cp.output_format.end_file()
 
-    if otype == 'song' or otype == 'lead' :
-        subprocess.run(["pdflatex", "-jobname="+outfile, outfilename], shell=True, check=True)
+    subprocess.run(["pdflatex", "-jobname="+outfile, outfilename], shell=True, check=True)
 
-        #os.remove(outfilename)
-        os.remove(outfile + ".aux")
-        os.remove(outfile + ".log")
+    os.remove(outfilename)
+    os.remove(outfile + ".aux")
+    os.remove(outfile + ".log")
 
 if __name__ == '__main__' :
     main(sys.argv[1:])
