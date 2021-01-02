@@ -248,8 +248,6 @@ class LaTexOutputFormat :
         self.of.write('\\usepackage{multicol}\n')
         self.of.write('\\usepackage{color}\n')
         self.of.write('\\usepackage[textwidth=19cm,textheight=22cm]{geometry}\n')
-        #self.of.write('\\newcommand\\chord[2][l]{%\n')
-        #self.of.write('\\makebox[0pt][#1]{\\begin{tabular}[b]{@{}l@{}}\\textbf{\color{blue}#2}\\\\\\mbox{}\\end{tabular}}}\n')
         self.of.write('\\newcommand\\textchord[2]{%\n')
         self.of.write('\\mbox{\\begin{tabular}[b]{@{}l@{}}\\textbf{\\color{blue}#1~}\\\\#2\\end{tabular}}}\n')
         self.of.write('\\renewcommand{\\familydefault}{\\sfdefault}\n')
@@ -284,94 +282,16 @@ class LaTexOutputFormat :
         self.of.write('\\end{document}\n')
         self.of.close()
 
-#    def get_formatted_chord(self, c) :
-#        if c == '|' : return '\\chord{$\\vert$}'
-#        else : return '\\chord{'+c.replace('#','\\#')+'}'
-
     def print_chord(self, c, t) :
         if c == '|' : return '\\textchord{$\\vert$}{'+t+'}'
         else : return '\\textchord{'+c.replace('#', '\\#')+'}{'+t+'}'
         
-#    def get_space(self,x) :
-#        #points = GlobalParameters.fontsize * x
-#        #return '\\hspace{'+str(points)+'pt}\n'
-#        spaces = '~' * 5 * x
-#        return spaces;
-
     def print_textline(self, x) :
         self.of.write(x+'\n')
 
     def print_verse(self, l) :
         self.of.write(l + '\\\\\n')
 
-
-# class OrgOutputFormat :
-    # def __init__(self, inter, columns, fname) :
-        # self.filename = fname
-        # self.interline = inter
-        # self.columns = columns
-        # self.of = open(fname, "w")
-
-    # def print_header(self) :
-        # self.of.write('#+OPTIONS: toc:nil num:nil\n')
-        # self.of.write('#+LaTeX_CLASS_OPTIONS: [11pt,a4paper]\n')
-        # self.of.write("#+LATEX_HEADER: \\usepackage{setspace}\n")
-        # self.of.write('#+LATEX_HEADER: \\usepackage{multicol}\n')
-        # self.of.write('#+LATEX_HEADER: \\usepackage[textwidth=18cm,textheight=22cm]{geometry}\n')
-        # self.of.write('\n')
-
-
-    # def print_title(self,t) :
-        # self.of.write('* ' + t)
-
-    # def start_song(self,t) :
-        # self.print_title(t)
-        # self.of.write('#+BEGIN_EXPORT latex\n')
-        # if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
-        # self.of.write('\\sffamily\n')
-        # self.of.write('\\begin{spacing}{'+str(self.interline)+'}\n')
-        # self.of.write('#+END_EXPORT\n')
-
-
-    # def end_song(self) :
-        # self.of.write('#+BEGIN_EXPORT latex\n')
-        # self.of.write('\\end{spacing}\n')
-        # if self.columns > 1 : self.of.write('\\end{multicols}\n')
-        # self.of.write('\\newpage\n')
-        # self.of.write('#+END_EXPORT\n')
-
-
-    # def start_verse(self) :
-        # # self.of.write('#+LaTeX: \\begin{spacing}{1.5}'
-        # self.of.write('#+BEGIN_VERSE\n')
-        # return
-
-
-    # def end_verse(self) :
-        # self.of.write('#+END_VERSE\n')
-        # # print '#+LaTeX: \\end{spacing}'
-
-
-    # def end_file(self) :
-        # self.of.close()
-        # return
-
-
-    # def get_formatted_chord(self, c) :
-        # return '\\textbf{[' + c.replace('#','\\#') + ']}'
-
-    # def start_verbatim(self) :
-        # self.of.write('#+BEGIN_VERBATIM\n')
-
-    # def end_verbatim(self) :
-        # self.of.write('#+END_VERBATIM\n')
-
-
-    # def print_textline(self,x) :
-        # self.of.write(x+'\n')
-
-    # def print_verse(self,x) :
-        # self.of.write(x+'\n')
 
 
 
