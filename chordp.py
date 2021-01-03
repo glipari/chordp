@@ -273,6 +273,7 @@ class LaTexOutputFormat :
 
     def print_chord(self, c, t) :
         if c == '|' : return '\\textchord{$\\vert$}{'+t+'}'
+        elif c == '' : return '\\textchord{~}{'+t+'}'
         else : return '\\textchord{'+c.replace('#', '\\#')+'}{'+t+'}'
         
     def print_textline(self, x) :
@@ -336,6 +337,10 @@ def main(argv) :
     cp.output_format.print_header()
 
     for fname in args :
+        if os.path.isdir(fname) :
+            for x in os.listdir(fname) :
+                args.append(os.path.join(fname, x))
+            continue
         with codecs.open(fname, "rU", encoding='utf-8') as f:
             lines = f.readlines()
             cp.process_song(lines)
