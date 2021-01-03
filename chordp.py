@@ -57,13 +57,13 @@ class ChordProcessor :
     # returns a list of pairs (chord, position), otherwise it returns None
     def chord_line(self, str) :
         words = str.split()
-        last_pos = 0
+        last_pos = -1
         cs = []
         for w in words :
             if self.is_a_chord(w) :
-                new_pos = str.find(w, last_pos)
-                if new_pos < last_pos :
-                    new_pos = last_pos + len(w)
+                new_pos = str.find(w, last_pos+1)
+                #if new_pos < last_pos :
+                #    new_pos = last_pos + len(w)
                 pair = w, new_pos
                 cs.append(pair)
                 last_pos = new_pos
@@ -225,9 +225,12 @@ class LaTexOutputFormat :
         self.of.write('\\usepackage{multicol}\n')
         self.of.write('\\usepackage{color}\n')
         self.of.write('\\usepackage[textwidth=19cm,textheight=22cm]{geometry}\n')
+        self.of.write('\\usepackage[T1]{fontenc}\n')
+        self.of.write('\\usepackage{lmodern}\n')
         self.of.write('\\newcommand\\textchord[2]{%\n')
-        self.of.write('\\mbox{\\begin{tabular}[b]{@{}l@{}}\\textbf{\\color{blue}#1~}\\\\#2\\end{tabular}}}\n')
-        self.of.write('\\renewcommand{\\familydefault}{\\sfdefault}\n')
+        self.of.write('\\mbox{\\begin{tabular}[b]{@{}l@{}}\\textbf{\\tt\\small\\color{blue}#1~}\\\\#2\\end{tabular}}}\n')
+        self.of.write('\\renewcommand{\\sfdefault}{lmss}\n')
+        #self.of.write('\\renewcommand{\\familydefault}{\\sfdefault}\n')
         self.of.write('\\begin{document}\n')
 
     def print_title(self, t) :
@@ -341,7 +344,7 @@ def main(argv) :
 
     subprocess.run(["pdflatex", "-jobname="+outfile, outfilename], shell=True, check=True)
 
-    os.remove(outfilename)
+    #os.remove(outfilename)
     os.remove(outfile + ".aux")
     os.remove(outfile + ".log")
 
