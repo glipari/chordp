@@ -53,9 +53,8 @@ class ChordProcessor :
             return False
 
 
-    # If the line "str" is composed entirely of chords, then it
+    # If the line "str" is composed entirely of chords and separations (|), then it
     # returns a list of pairs (chord, position), otherwise it returns None
-    # @todo add the possibility to add more symbols, like repetitions, etc.
     def chord_line(self, str) :
         words = str.split()
         last_pos = 0
@@ -71,9 +70,9 @@ class ChordProcessor :
             else :
                 return None
 
-        return cs
-
-
+        return cs   
+        
+        
     def process_song(self,lines) :
         # search title
         local_title = lines[0]
@@ -102,15 +101,19 @@ class ChordProcessor :
         x = x + 1
         chord_sequence = None
 
+        self.output_format.start_block()
+        
         for l in lines[x:] :
             l = l[:-1]  # remove \n
 
             if l.strip() == '[tab]' :
                 in_tab = 1
+                self.output_format.end_block()
                 self.output_format.start_verbatim()
             elif l.strip() == '[/]' :
                 in_tab = 0
                 self.output_format.end_verbatim()
+                self.output_format.start_block()
             elif in_tab > 0 :
                 self.output_format.print_textline(l)
             elif l.strip() == '' :    # an empty line ends the verse
@@ -141,33 +144,6 @@ class ChordProcessor :
                                     final = final + ' '
                             else : 
                                 final = final + self.output_format.print_chord(prev_chord, '~')
-
-                        
-                    # if p >= len(l) :
-                        # if q < len(l) :
-                            # final = final + self.output_format.print_chord(c, l[q:])
-                        # else :
-                            # final = final + self.output_format.print_chord(c, ' ')
-                    # else :
-                        # final = final + self.output_format.print_chord(c, l[q:p])
-                        # if l[p] == ' ' : 
-                            # final = final + ' '
-                        
-                    # if p >= len(l) :                        # the position is beyond the length of the verse
-                        # if q < len(l) :                     # and the previous position was within the verse
-                            # # put the chord at the end
-                            # final = final + l[q:] + ' ' + self.output_format.get_formatted_chord(c)
-                        # else :
-                            # # put some extra space in it
-                            # final = final + ' ' + self.output_format.get_space(2) + self.output_format.get_formatted_chord(c)
-                        # q = p
-                    # else :
-                        # final = final + l[q:p]
-                        # s = len(l[q:p].strip()) - len(prev_chord)
-                        # if s < 0 :
-                            # final = final + self.output_format.get_space(2)
-                        # final = final + self.output_format.get_formatted_chord(c)
-                        # q = p
 
                     q = p
                     prev_chord = c
@@ -237,6 +213,7 @@ class ChordProcessor :
 
 class LaTexOutputFormat :
     def __init__(self, interline, columns, fname) :
+        self.in_block = False
         self.filename = fname
         self.interline = interline
         self.columns = columns
@@ -258,9 +235,18 @@ class LaTexOutputFormat :
 
     def start_song(self,t) :
         self.print_title(t)
-        if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
         self.of.write('\\begin{spacing}{'+str(self.interline)+'}\n')
 
+    def start_block(self) :
+        if not self.in_block :
+            self.in_block = True
+            if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
+        
+    def end_block(self) :
+        if self.in_block : 
+            self.in_block = False
+            if self.columns > 1 : self.of.write('\\end{multicols}\n')
+        
     def start_verbatim(self) :
         self.of.write('\\begin{verbatim}\n')
 
@@ -274,8 +260,8 @@ class LaTexOutputFormat :
         self.of.write('\\end{verse}\n')
 
     def end_song(self) :
+        self.end_block()
         self.of.write('\\end{spacing}\n')
-        if self.columns > 1 : self.of.write('\\end{multicols}\n')
         self.of.write('\\newpage\n\n')
 
     def end_file(self) :
@@ -291,7 +277,6 @@ class LaTexOutputFormat :
 
     def print_verse(self, l) :
         self.of.write(l + '\\\\\n')
-
 
 
 
