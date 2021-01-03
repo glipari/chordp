@@ -33,10 +33,10 @@ class ChordProcessor :
 
         cdies = '(#|b)?'
         cmode = '(m(aj7)?)?'
-        cadd = '(sus4|sus2|4|5|6|7(\\+)?|9|11|13)'
+        cadd = '(dim|sus4|sus2|(b)?(4|5|6|7|9|11|13)(\\+|b|#)?)'
         caddf = cadd + '?'
         clast = '(/('+chlist+cdies+'|'+cadd+'))?'
-        csep = '\\|'
+        csep = '(\\|(x[1-9])?)'
 
         self.regex_chord_en = csep + '|' + '(' + chlist + cdies + cmode + caddf + clast + ')'
         #print self.regex_chord_en
@@ -79,8 +79,8 @@ class ChordProcessor :
         local_transpose = GlobalParameters.transpose
         local_columns = GlobalParameters.columns
 
-        in_verse = 0;
-        in_tab = 0;
+        in_verse = False;
+        in_tab = False;
         x = 1  # index of first line
 
         while not lines[x].startswith('---') :
@@ -107,19 +107,19 @@ class ChordProcessor :
             l = l[:-1]  # remove \n
 
             if l.strip() == '[tab]' :
-                in_tab = 1
+                in_tab = True
                 self.output_format.end_block()
                 self.output_format.start_verbatim()
-            elif l.strip() == '[/]' :
-                in_tab = 0
+            elif l.strip() == '[/]' and in_tab :
+                in_tab = False
                 self.output_format.end_verbatim()
                 self.output_format.start_block()
-            elif in_tab > 0 :
+            elif in_tab :
                 self.output_format.print_textline(l)
-            elif l.strip() == '' :    # an empty line ends the verse
-                if in_verse > 0:
+            elif l.strip() == '' and chord_sequence == None:    # an empty line ends the verse
+                if in_verse:
                     self.output_format.end_verse()
-                    in_verse = 0
+                    in_verse = False
                     chord_sequence = None
                 else :
                     continue
@@ -152,18 +152,18 @@ class ChordProcessor :
                 if q < len(l) and len(l[q:].strip()) : final = final + self.output_format.print_chord(prev_chord, l[q:])
                 else : final = final + self.output_format.print_chord(prev_chord, '~') 
                 self.output_format.print_verse(final)
-                in_verse = in_verse + 1
+                in_verse = True
                 chord_sequence = None
             else :
                 # I should find the chords here
-                if in_verse == 0:
-                    in_verse = 1
+                if not in_verse:
+                    in_verse = True
                     self.output_format.start_verse()
                 chord_sequence = self.chord_line(l)
                 if chord_sequence == None :
                     self.output_format.print_verse(l)
 
-        if in_verse > 0 :
+        if in_verse:
             self.output_format.end_verse()
         self.output_format.end_song()
         self.output_format.columns = GlobalParameters.columns
@@ -272,9 +272,8 @@ class LaTexOutputFormat :
         self.of.close()
 
     def print_chord(self, c, t) :
-        if c == '|' : return '\\textchord{$\\vert$}{'+t+'}'
-        elif c == '' : return '\\textchord{~}{'+t+'}'
-        else : return '\\textchord{'+c.replace('#', '\\#')+'}{'+t+'}'
+        if c == '' : return '\\textchord{~}{'+t+'}'
+        else : return '\\textchord{'+c.replace('#', '\\#').replace('|','$\\vert$') +'}{'+t+'}'
         
     def print_textline(self, x) :
         self.of.write(x+'\n')

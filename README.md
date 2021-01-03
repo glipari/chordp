@@ -38,13 +38,13 @@ This is still in alpha, lot of work is needed before a clean script.
 - If the line following the chords is a verse line, the chords will 
   be aligned to the words at the correct position. 
   
-- If the line following the chords is completely empty, the chords will 
-  not be displayed. Please add at least a character (for example a .)
-
 - You can write tablatures. They will be visualised as verbatim. To do so, 
   you need to enclose the tablature within two text lines starting with 
   [tab] and [/].
 
+- A "chord" can also be a vertical bar |, followed by xN, where N is a number between 2-9. 
+  This allow to write repetitions.  The bar can be used to mark measures.
+  
 
 ## Characters
 
