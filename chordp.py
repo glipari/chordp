@@ -108,6 +108,9 @@ class ChordProcessor :
 
             if l.strip() == '[tab]' :
                 in_tab = True
+                if in_verse : 
+                    in_verse = False 
+                    self.output_format.end_verse()
                 self.output_format.end_block()
                 self.output_format.start_verbatim()
             elif l.strip() == '[/]' and in_tab :
