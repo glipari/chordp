@@ -33,16 +33,26 @@ class ChordProcessor :
 
         cdies = '(#|b)?'
         cmode = '(m(aj7)?)?'
-        cadd = '(dim|sus4|sus2|(b)?(4|5|6|7|9|11|13)(\\+|b|#)?)'
-        caddf = cadd + '?'
+        cadd = '(dim|sus4|sus2|add|(b)?(4|5|6|7|9|11|13)(\\+|b|#)?)'
+        caddf = '(' + cadd + ')*'
         clast = '(/('+chlist+cdies+'|'+cadd+'))?'
         csep = '(\\|(x[1-9])?)'
 
         self.regex_chord_en = csep + '|' + '(' + chlist + cdies + cmode + caddf + clast + ')'
         #print self.regex_chord_en
         self.pattern_en = re.compile(self.regex_chord_en)
+        
+        self.verse = ["verse", "chorus", "pre-chorus", "solo", "break", "intro", "ending"] 
+        
         return
 
+    def is_special(self, l) :
+        for x in self.verse :
+            y = '[' + x
+            if l.strip().lower().startswith(y) :
+                return True
+        return False;
+        
 
     # If the patterns matches
     def is_a_chord(self, str) :
@@ -95,6 +105,7 @@ class ChordProcessor :
                 self.output_format.print_textline(lines[x])
             x = x + 1
 
+        # start of the song 
         self.output_format.columns = local_columns
         self.output_format.start_song(lines[0])
 
@@ -106,7 +117,7 @@ class ChordProcessor :
         for l in lines[x:] :
             l = l[:-1]  # remove \n
 
-            if l.strip() == '[tab]' :
+            if not in_tab and l.strip() == '[tab]' :
                 in_tab = True
                 if in_verse : 
                     in_verse = False 
@@ -126,6 +137,8 @@ class ChordProcessor :
                     chord_sequence = None
                 else :
                     continue
+            elif self.is_special(l) :
+                self.output_format.bold(l.strip())
             elif chord_sequence != None :   # a verse with a chord sequence on top
                 # mix chords with words
                 final = u''
@@ -150,7 +163,6 @@ class ChordProcessor :
 
                     q = p
                     prev_chord = c
-
 
                 if q < len(l) and len(l[q:].strip()) : final = final + self.output_format.print_chord(prev_chord, l[q:])
                 else : final = final + self.output_format.print_chord(prev_chord, '~') 
@@ -220,70 +232,72 @@ class LaTexOutputFormat :
         self.filename = fname
         self.interline = interline
         self.columns = columns
-        self.of = open(fname, "w")
+        self.of = codecs.open(fname, "w", "utf-8")
 
     def print_header(self) :
-        self.of.write('\\documentclass[' + GlobalParameters.fontsize + 'pt]{extarticle}\n')
-        self.of.write('\\usepackage{setspace}\n')
-        self.of.write('\\usepackage{multicol}\n')
-        self.of.write('\\usepackage{color}\n')
-        self.of.write('\\usepackage[textwidth=19cm,textheight=22cm]{geometry}\n')
-        self.of.write('\\usepackage[T1]{fontenc}\n')
-        self.of.write('\\usepackage{lmodern}\n')
-        self.of.write('\\newcommand\\textchord[2]{%\n')
-        self.of.write('\\mbox{\\begin{tabular}[b]{@{}l@{}}\\textbf{\\tt\\small\\color{blue}#1~}\\\\#2\\end{tabular}}}\n')
-        self.of.write('\\renewcommand{\\sfdefault}{lmss}\n')
+        self.of.write(u'\\documentclass[' + GlobalParameters.fontsize + 'pt]{extarticle}\n')
+        self.of.write(u'\\usepackage[utf8]{inputenc}\n')
+        self.of.write(u'\\usepackage{setspace}\n')
+        self.of.write(u'\\usepackage{multicol}\n')
+        self.of.write(u'\\usepackage{color}\n')
+        self.of.write(u'\\usepackage[textwidth=19cm,textheight=22cm]{geometry}\n')
+        self.of.write(u'\\usepackage[T1]{fontenc}\n')
+        self.of.write(u'\\usepackage{lmodern}\n')
+        self.of.write(u'\\newcommand\\textchord[2]{%\n')
+        self.of.write(u'\\mbox{\\begin{tabular}[b]{@{}l@{}}\\textbf{\\tt\\small\\color{blue}#1~}\\\\#2\\end{tabular}}}\n')
+        self.of.write(u'\\renewcommand{\\sfdefault}{lmss}\n')
         #self.of.write('\\renewcommand{\\familydefault}{\\sfdefault}\n')
-        self.of.write('\\begin{document}\n')
+        self.of.write(u'\\begin{document}\n')
 
     def print_title(self, t) :
-        self.of.write('\\section*{'+ t+ '}\n')
+        self.of.write(u'\\section*{'+ t+ '}\n')
 
     def start_song(self,t) :
         self.print_title(t)
-        self.of.write('\\begin{spacing}{'+str(self.interline)+'}\n')
+        self.of.write(u'\\begin{spacing}{'+str(self.interline)+'}\n')
 
     def start_block(self) :
         if not self.in_block :
             self.in_block = True
-            if self.columns > 1 : self.of.write('\\begin{multicols}{'+str(self.columns)+'}\n')
+            if self.columns > 1 : self.of.write(u'\\begin{multicols}{'+str(self.columns)+u'}\n')
         
     def end_block(self) :
         if self.in_block : 
             self.in_block = False
-            if self.columns > 1 : self.of.write('\\end{multicols}\n')
+            if self.columns > 1 : self.of.write(u'\\end{multicols}\n')
         
     def start_verbatim(self) :
-        self.of.write('\\begin{verbatim}\n')
+        self.of.write(u'\\begin{verbatim}\n')
 
     def end_verbatim(self) :
-        self.of.write('\\end{verbatim}\n')
+        self.of.write(u'\\end{verbatim}\n')
 
     def start_verse(self) :
-        self.of.write('\\begin{verse}\n')
+        self.of.write(u'\\begin{verse}\n')
 
     def end_verse(self) :
-        self.of.write('\\end{verse}\n')
+        self.of.write(u'\\end{verse}\n')
 
     def end_song(self) :
         self.end_block()
-        self.of.write('\\end{spacing}\n')
-        self.of.write('\\newpage\n\n')
+        self.of.write(u'\\end{spacing}\n')
+        self.of.write(u'\\newpage\n\n')
 
     def end_file(self) :
-        self.of.write('\\end{document}\n')
+        self.of.write(u'\\end{document}\n')
         self.of.close()
 
     def print_chord(self, c, t) :
-        if c == '' : return '\\textchord{~}{'+t+'}'
-        else : return '\\textchord{'+c.replace('#', '\\#').replace('|','$\\vert$') +'}{'+t+'}'
+        if c == '' : return u'\\textchord{~}{'+t+'}'
+        else : return u'\\textchord{'+c.replace('#', '\\#').replace('|','$\\vert$') +'}{'+t+'}'
         
     def print_textline(self, x) :
-        self.of.write(x+'\n')
+        self.of.write(x+u'\n')
 
     def print_verse(self, l) :
-        self.of.write(l + '\\\\\n')
-
+        self.of.write(l + u'\\\\\n')
+    def bold(self, l) :
+        self.of.write(u'\\textbf{'+l+u'}\n')
 
 
 def main(argv) :
