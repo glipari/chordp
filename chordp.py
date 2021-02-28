@@ -42,7 +42,7 @@ class ChordProcessor :
         #print self.regex_chord_en
         self.pattern_en = re.compile(self.regex_chord_en)
         
-        self.verse = ["verse", "chorus", "pre-chorus", "solo", "break", "intro", "ending"] 
+        self.verse = ["verse", "chorus", "pre-chorus", "solo", "break", "intro", "ending", "outro", "pre-outro", "bridge", "interlude"] 
         
         return
 
