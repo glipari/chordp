@@ -163,8 +163,12 @@ class ChordProcessor :
 					in_verse = False
 					chord_sequence = None
 				else :
+					#self.output_format.print_textline("\\\\")
 					continue
 			elif self.is_special(l) :
+				if in_verse :
+					self.output_format.end_verse();
+					in_verse = False;
 				self.output_format.bold(l.strip())
 			elif chord_sequence != None :	# a verse with a chord sequence on top
 				# mix chords with words
@@ -268,7 +272,7 @@ class LaTexOutputFormat :
 		self.of.write(u'\\usepackage{gchords}\n')
 		self.of.write(u'\\usepackage{multicol}\n')
 		self.of.write(u'\\usepackage{color}\n')
-		self.of.write(u'\\usepackage[textwidth=19cm,textheight=22cm]{geometry}\n')
+		self.of.write(u'\\usepackage[textwidth=19cm,textheight=25cm]{geometry}\n')
 		self.of.write(u'\\usepackage[T1]{fontenc}\n')
 		self.of.write(u'\\usepackage{lmodern}\n')
 		self.of.write(u'\\newcommand\\textchord[2]{%\n')
